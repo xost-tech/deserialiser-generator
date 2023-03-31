@@ -1,0 +1,5 @@
+Student,This is a student record\nfor the school
+firstName,1,20
+lastName,21,40
+level,41,50
+studentClass,51,60
