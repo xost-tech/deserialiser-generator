@@ -1,0 +1,7 @@
+private $fieldType $fieldName;
+public $fieldType get$fieldNameCap() {
+    return $fieldName;
+}
+public void set$fieldNameCap($fieldType $fieldName) {
+    this.$fieldName = $fieldName;
+}
