@@ -50,6 +50,38 @@ class GeneratorTest {
     }
 
     @Test
+    void constructObjectVelocityEqual() throws Exception {
+        String content = "package com.xost.generator.output;\n\n" +
+                "////This is a student record\\nfor the school\n" +
+                "public class Student {\n" +
+                "private String firstName;\n" +
+                "public String getFirstName() {\n" +
+                "    return firstName;\n" +
+                "}\n" +
+                "public void setFirstName(String firstName) {\n" +
+                "    this.firstName = firstName;\n" +
+                "}\n" +
+                "private String lastName;\n" +
+                "public String getLastName() {\n" +
+                "    return lastName;\n" +
+                "}\n" +
+                "public void setLastName(String lastName) {\n" +
+                "    this.lastName = lastName;\n" +
+                "}\n" +
+                "}";
+        assertEquals(content, new Generator().constructObjectVelocity(
+                new GeneratorObject(
+                        "Student",
+                        "//This is a student record\\nfor the school",
+                        Arrays.asList(
+                                new GeneratorDeserialiser("firstName", 0, 20),
+                                new GeneratorDeserialiser("lastName", 20, 40)
+                        )
+                )
+        ));
+    }
+
+    @Test
     void constructObjectEqual() {
         String content = "package com.xost.generator.output;\n\n" +
                 "////This is a student record\\nfor the school\n" +

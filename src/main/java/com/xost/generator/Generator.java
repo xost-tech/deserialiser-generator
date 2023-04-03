@@ -4,12 +4,14 @@ import com.xost.generator.constant.Status;
 import com.xost.generator.util.AppUtil;
 import com.xost.generator.util.FormatUtil;
 import org.apache.log4j.Logger;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
 
 import java.io.*;
-import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import static com.xost.generator.constant.Status.*;
 import static com.xost.generator.constant.Template.*;
@@ -22,7 +24,8 @@ public class Generator {
             String filename = Paths.get((new Generator().getClass().getClassLoader().getResource("schema/schema.txt")).toURI()).toFile().getAbsolutePath();
             List<String> content = generator.readSchemaFile(filename);
             GeneratorObject generatorObject = generator.parseSchemaFile(content);
-            String objectContent = generator.constructObject(generatorObject);
+            String objectContent = generator.constructObjectVelocity(generatorObject);
+            //String objectContent = generator.constructObject(generatorObject);
             generator.generateFile(generatorObject.getObjectName(), objectContent);
             String deserialiserContent = generator.constructDeserialiser(generatorObject);
             generator.generateFile(generatorObject.getObjectName() + "Deserialiser", deserialiserContent);
@@ -97,6 +100,42 @@ public class Generator {
             generatorObject.setGeneratorDeserialisers(generatorDeserialisers);
         }
         return generatorObject;
+    }
+
+    public String constructObjectVelocity(GeneratorObject generatorObject) throws Exception {
+        FormatUtil formatUtil = new FormatUtil();
+        VelocityEngine velocityEngine = new VelocityEngine();
+        Properties properties = new Properties();
+        properties.setProperty("resource.loader", "class");
+        properties.setProperty("class.resource.loader.class", "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
+        velocityEngine.init(properties);
+        VelocityContext velocityContext = null;
+        org.apache.velocity.Template template = null;
+        StringWriter writer = null;
+        StringBuffer sb = new StringBuffer();
+
+        for (GeneratorDeserialiser generatorDeserialiser : generatorObject.getGeneratorDeserialisers()) {
+            velocityContext = new VelocityContext();
+            velocityContext.put("fieldType", "String");
+            velocityContext.put("fieldName", formatUtil.firstCharLower(generatorDeserialiser.getFieldName()));
+            velocityContext.put("fieldNameCap", formatUtil.capitalize(generatorDeserialiser.getFieldName()));
+            template = velocityEngine.getTemplate("template/objectField.vm");
+            writer = new StringWriter();
+            template.merge(velocityContext, writer);
+            sb.append(writer);
+        }
+
+        velocityContext = new VelocityContext();
+        velocityContext.put("objectPackage", new AppUtil().getProperties("output.package", "app"));
+        velocityContext.put("objectDescription", generatorObject.getObjectDescription());
+        velocityContext.put("objectName", generatorObject.getObjectName());
+        velocityContext.put("objectField", sb.toString());
+        template = velocityEngine.getTemplate("template/objectClass.vm");
+        writer = new StringWriter();
+        template.merge(velocityContext, writer);
+        writer.close();
+
+        return writer.toString();
     }
 
     public String constructObject(GeneratorObject generatorObject) {
